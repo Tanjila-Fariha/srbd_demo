@@ -2,7 +2,7 @@ name: Generate UML Diagrams
 on:
   push:
     branches:
-      - main  # This tells the robot to work when you push to main
+      - main
 
 jobs:
   draw:
@@ -10,7 +10,8 @@ jobs:
     permissions:
       contents: write 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
       
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -20,21 +21,22 @@ jobs:
       - name: Install Pylint
         run: pip install pylint
 
-      - name: Generate UML
+      - name: Create Diagram Metadata
         run: |
           mkdir -p diagrams
+          # This reads your demo.py and creates the text instructions for the diagram
           pyreverse -o puml -p srbd_project demo.py
           mv classes_srbd_project.puml diagrams/classes.puml
 
-      - name: Render to PNG
-        uses: graneed/plantuml-github-action@v1
+      - name: Render PlantUML to PNG
+        uses: cloudbees/plantuml-github-action@master
         with:
           args: -v -tpng diagrams/classes.puml
 
-      - name: Save to Repo
+      - name: Save Image to GitHub
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add diagrams/classes.png
-          git commit -m "Auto-update UML diagram" || echo "No changes"
+          git add diagrams/*.png
+          git commit -m "Update UML diagrams" || echo "No changes to commit"
           git push
