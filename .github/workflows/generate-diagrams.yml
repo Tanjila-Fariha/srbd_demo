@@ -1,0 +1,40 @@
+name: Generate UML Diagrams
+on:
+  push:
+    branches:
+      - main  # This tells the robot to work when you push to main
+
+jobs:
+  draw:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write 
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Pylint
+        run: pip install pylint
+
+      - name: Generate UML
+        run: |
+          mkdir -p diagrams
+          pyreverse -o puml -p srbd_project demo.py
+          mv classes_srbd_project.puml diagrams/classes.puml
+
+      - name: Render to PNG
+        uses: graneed/plantuml-github-action@v1
+        with:
+          args: -v -tpng diagrams/classes.puml
+
+      - name: Save to Repo
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add diagrams/classes.png
+          git commit -m "Auto-update UML diagram" || echo "No changes"
+          git push
